@@ -4,6 +4,10 @@ from django.http import HttpResponse, JsonResponse
 from core.models import Categoria
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.serializers import ModelSerializer
+from rest_framework.response import Response
+from rest_framework import status
 import json
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -41,3 +45,22 @@ class CategoriaView(View):
         qs.delete()
         data = {"mensagem": "Item deletado"}
         return JsonResponse(data)
+    
+class CategoriaSerializer(ModelSerializer):
+    class Meta:
+        models = Categoria
+        fields = '__all__'
+
+class CategoriasList(APIView):
+    def get(self, request):
+        categorias = Categoria.objects.all()
+        serialiazer = CategoriaSerializer(categorias, many=True)
+        return Response(serialiazer.data)
+    
+    def post(self, request):
+        serialiazer = CategoriaSerializer(data=request.data)
+        if serialiazer.is_valid():
+            serialiazer.save()
+            return Response(serialiazer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serialiazer.errors, status=status.HTTP_400_BAD_REQUEST)
